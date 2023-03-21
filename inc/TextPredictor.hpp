@@ -2,12 +2,12 @@
 
 #include "../lib/IntNet/intnet.hpp"
 
-#define CHARBUFFERSIZE 5
+#define CHARBUFFERSIZE 50
 
 class TextPredictor
 {
 	private:
-		in::NetworkStructure netstruct = in::NetworkStructure(1 + (CHARBUFFERSIZE * 29), {30, 30}, 29); // null, a-z, , \n
+		in::NetworkStructure netstruct = in::NetworkStructure(1 + (CHARBUFFERSIZE * 29), {}, 29); // null, a-z, , \n
 		in::NeuralNetwork	*network;
 
 	public:

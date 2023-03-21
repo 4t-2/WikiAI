@@ -46,43 +46,7 @@ char nodeToChar(int node)
 		ni = 10;
 	}
 
-	return node;
-}
-
-void TextPredictor::train(std::string input, char target)
-{
-	std::vector<float> targetValue;
-	targetValue.resize(29);
-
-	for (int i = 1; i < network->structure.totalInputNodes; i++)
-	{
-		network->setInputNode(i, 0);
-	}
-
-	for (int i = 0; i < CHARBUFFERSIZE; i++)
-	{
-		int ci = 0;
-
-		if (input[i] >= 97 && input[i] <= 122)
-		{
-			ci = input[i] - 96;
-		}
-		else if (input[i] == 32)
-		{
-			ci = 27;
-		}
-		else if (input[i] == 10)
-		{
-			ci = 28;
-		}
-
-		network->setInputNode((i * CHARBUFFERSIZE) + ci + 1, 1);
-		targetValue[ci] = 1;
-	}
-
-	network->update();
-
-	network->backpropagation(targetValue);
+	return ni;
 }
 
 char TextPredictor::predict(std::string input)
@@ -94,41 +58,41 @@ char TextPredictor::predict(std::string input)
 
 	for (int i = 0; i < CHARBUFFERSIZE; i++)
 	{
-		int ci = 0;
+		char node = charToNode(input[i]);
 
-		if (input[i] >= 97 && input[i] <= 122)
-		{
-			ci = input[i] - 96;
-		}
-		else if (input[i] == 32)
-		{
-			ci = 27;
-		}
-		else if (input[i] == 10)
-		{
-			ci = 28;
-		}
-
-		network->setInputNode((i * CHARBUFFERSIZE) + ci + 1, 1);
+		network->setInputNode((i * 29) + node + 1, 1);
 	}
 
 	network->update();
 
-	int max = network->structure.totalNodes - network->structure.totalOutputNodes;
-	int val = 0;
+	int	  max = 0;
+	float val = 0;
+	int totalSubOut = network->structure.totalNodes - network->structure.totalOutputNodes;
 
-	for(int i = network->structure.totalNodes - network->structure.totalOutputNodes; i < network->structure.totalNodes; i++)
+	for(int i = 0; i < network->structure.totalOutputNodes; i++)
 	{
-		if(network->node[i].value > val)
+		if(network->node[i + totalSubOut].value > val)
 		{
+			val = network->node[i+totalSubOut].value;
 			max = i;
 		}
 	}
 
-	std::cout << (int)nodeToChar(max - (network->structure.totalNodes - network->structure.totalOutputNodes));
-
-	return 0;
+	return nodeToChar(max);
 }
+
+void TextPredictor::train(std::string input, char target)
+{
+	std::vector<float> targetValue;
+	targetValue.resize(29);
+
+	targetValue[charToNode(target)] = 1;
+
+	this->predict(input);
+
+	std::cout << network->backpropagation(targetValue) << '\n';
+}
+
 
 TextPredictor::~TextPredictor()
 {
