@@ -1,98 +1,69 @@
 #include "../inc/TextPredictor.hpp"
 
-TextPredictor::TextPredictor()
+TextPredictor::TextPredictor(int indexedWords, int embeddingDimension)
+	: netstruct(in::NetworkStructure((WORDBUFFERSIZE * indexedWords) + 1, {200, 200}, indexedWords))
 {
 	in::NetworkStructure::randomWeights(netstruct);
 
 	network = new in::NeuralNetwork(netstruct);
 
-	network->setInputNode(0, 1);
+	network->learningRate = 0.6;
+
+	network->setInputNode(network->structure.totalInputNodes - 1, 1);
+
+	this->indexedWords = indexedWords;
 }
 
-int charToNode(char c)
+int TextPredictor::predict(std::vector<int> index)
 {
-	int ci = 0;
-
-	if (c >= 97 && c <= 122)
-	{
-		ci = c - 96;
-	}
-	else if (c == 32)
-	{
-		ci = 27;
-	}
-	else if (c == 10)
-	{
-		ci = 28;
-	}
-
-	return ci;
-}
-
-char nodeToChar(int node)
-{
-	int ni = 0;
-
-	if ((node + 96) >= 97 && (node + 96) <= 122)
-	{
-		ni = node + 96;
-	}
-	else if (node == 27)
-	{
-		ni = 32;
-	}
-	else if (node == 28)
-	{
-		ni = 10;
-	}
-
-	return ni;
-}
-
-char TextPredictor::predict(std::string input)
-{
-	for (int i = 1; i < network->structure.totalInputNodes; i++)
+	for (int i = 0; i < network->structure.totalInputNodes - 1; i++)
 	{
 		network->setInputNode(i, 0);
 	}
 
-	for (int i = 0; i < CHARBUFFERSIZE; i++)
+	for (int i = 0; i < index.size(); i++)
 	{
-		char node = charToNode(input[i]);
-
-		network->setInputNode((i * 29) + node + 1, 1);
+		network->setInputNode((i * indexedWords) + index[i], 1);
 	}
 
 	network->update();
 
-	int	  max = 0;
-	float val = 0;
-	int totalSubOut = network->structure.totalNodes - network->structure.totalOutputNodes;
+	std::vector<float> outputVec;
+	outputVec.resize(indexedWords);
 
-	for(int i = 0; i < network->structure.totalOutputNodes; i++)
+	for (int i = 0; i < outputVec.size(); i++)
 	{
-		if(network->node[i + totalSubOut].value > val)
+		outputVec[i] = network->outputNode[i].value;
+	}
+
+	struct
+	{
+			int	  id;
+			float val;
+	} max;
+
+	for (int i = 0; i < network->structure.totalOutputNodes; i++)
+	{
+		if (max.val < network->outputNode[i].value)
 		{
-			val = network->node[i+totalSubOut].value;
-			max = i;
+			max.id = i;
 		}
 	}
 
-	return nodeToChar(max);
+	return max.id;
 }
 
-void TextPredictor::train(std::string input, char target)
+void TextPredictor::train(std::vector<int> index, int target)
 {
 	std::vector<float> targetValue;
-	targetValue.resize(29);
+	targetValue.resize(indexedWords);
 
-	targetValue[charToNode(target)] = 1;
+	targetValue[target] = 1;
 
-	this->predict(input);
+	int prediction = this->predict(index);
 
 	std::cout << network->backpropagation(targetValue) << '\n';
 }
-
 
 TextPredictor::~TextPredictor()
 {

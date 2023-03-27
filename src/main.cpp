@@ -5,45 +5,98 @@
 #include <fstream>
 #include <string>
 
-int main()
+int getWordIndex(std::vector<std::string> indexedWords, std::string word)
 {
-	std::fstream fs("text.txt", std::ios::in);
-	std::string	 text;
-	std::string	 newText;
-
-	for (int i = 0; i < CHARBUFFERSIZE; i++)
+	for (int i = 0; i < indexedWords.size(); i++)
 	{
-		text = (char)1 + text;
+		if (word == indexedWords[i])
+		{
+			return i;
+		}
 	}
 
-	newText = text;
+	return -1;
+}
+
+int main()
+{
+	std::fstream			 fs("text.txt", std::ios::in);
+	std::string				 newText;
+	std::vector<std::string> indexedWords;
+	std::vector<std::string> trainingData;
 
 	std::cout << "Reading training data" << '\n';
 
 	while (fs.eof() == false)
 	{
-		std::string line;
-		std::getline(fs, line);
+		std::string element;
+		std::getline(fs, element, ' ');
 
-		text += line + '\n';
+		trainingData.emplace_back(element);
+
+		bool found = false;
+
+		for (std::string &el : indexedWords)
+		{
+			if (el == element)
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			indexedWords.emplace_back(element);
+		}
 	}
+
+	std::cout << "Building network" << '\n';
+
+	// std::srand(time(NULL));
+	TextPredictor tp(indexedWords.size(), 1);
 
 	std::cout << "Training network" << '\n';
-	
-	// std::srand(time(NULL));
 
-	TextPredictor tp;
-
-	for (int i = 0; i < text.length()-(CHARBUFFERSIZE-1); i++)
+	for (int y = 0; y < 5; y++)
 	{
-		tp.train(text.substr(i, CHARBUFFERSIZE), text[CHARBUFFERSIZE + i]);
-		std::cout << i << " / " << text.length() - 10 << '\n' << '\n';
-	}
+		for (int i = 0; i < trainingData.size() - WORDBUFFERSIZE; i++)
+		{
+			std::vector<int> index;
 
-	newText += tp.predict(newText.substr(newText.length() - CHARBUFFERSIZE, CHARBUFFERSIZE));
-	for (int i = 0; i < 500 && newText[newText.length() - 1] != 0; i++)
-	{
-		newText += tp.predict(newText.substr(newText.length() - CHARBUFFERSIZE, CHARBUFFERSIZE));
+			for (int x = 0; x < WORDBUFFERSIZE; x++)
+			{
+				index.emplace_back(getWordIndex(indexedWords, trainingData[i + x]));
+			}
+
+			int target = getWordIndex(indexedWords, trainingData[i + WORDBUFFERSIZE]);
+
+			std::cout << i << " / " << trainingData.size() - (WORDBUFFERSIZE - 1) << '\n';
+			tp.train(index, target);
+		}
 	}
-	std::cout << newText << '\n';
+	// int bs = 10;
+	// std::cout << "structure" << '\n';
+	// in::NetworkStructure ns(1 + (bs * 29), { (bs * 29)}, 29);
+	//
+	// std::cout << "network" << '\n';
+	// in::NeuralNetwork nn(ns);
+	//
+	// std::cout << "writing" << '\n';
+	// std::fstream fs1("modelstruct", std::ios::out);
+	// std::fstream fs2("modelnetwor", std::ios::out);
+
+	// fs1 << ns.serialize();
+	// fs2 << nn.serialize();
+	//
+	// fs1.close();
+	// fs2.close();
+
+	// in::NeuralNetwork test((unsigned char*)nn.serialize().c_str(), (unsigned
+	// char*)ns.serialize().c_str());
+	//
+	// std::cout << "done" << '\n';
+	//
+	// nn.destroy();
+	// test.destroy();
 }

@@ -2,20 +2,22 @@
 
 #include "../lib/IntNet/intnet.hpp"
 
-#define CHARBUFFERSIZE 50
+#define WORDBUFFERSIZE 1
 
 class TextPredictor
 {
 	private:
-		in::NetworkStructure netstruct = in::NetworkStructure(1 + (CHARBUFFERSIZE * 29), {}, 29); // null, a-z, , \n
+		in::NetworkStructure netstruct; // hot encoded words, const 1
 		in::NeuralNetwork	*network;
+		int indexedWords = 0;
+		int embeddingDimension = 0;
 
 	public:
-		TextPredictor();
+		TextPredictor(int indexedWords, int embeddingDimension);
 
-		void train(std::string input, char target);
+		void train(std::vector<int> index, int target);
 
-		char predict(std::string input);
+		int predict(std::vector<int> index);
 
 		~TextPredictor();
 };

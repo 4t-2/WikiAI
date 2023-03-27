@@ -3,3 +3,7 @@ lib/IntNet
 bin/main.out
 .cache/clangd/index
 bin/text.txt
+bin/unclean.txt
+bin/cleantext.txt
+bin/modelnetwor
+bin/modelstruct
